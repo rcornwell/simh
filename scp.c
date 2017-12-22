@@ -1180,6 +1180,9 @@ static const char simh_help[] =
       "+set clock nocatchup         disable catchup clock ticks\n"
       "+set clock catchup           enable catchup clock ticks\n"
       "+set clock calib=n%%          specify idle calibration skip %%\n"
+      "+set clock stop=n            stop execution after n instructions\n\n"
+      " The set clock stop command allows execution to have a bound when\n"
+      " execution starts with a BOOT, NEXT or CONTINUE command.\n"
 #define HLP_SET_ASYNCH "*Commands SET Asynch"
       "3Asynch\n"
       "+set asynch                  enable asynchronous I/O\n"
@@ -6026,6 +6029,8 @@ return scp_attach_unit (dptr, uptr, gbuf);              /* attach */
 
 t_stat scp_attach_unit (DEVICE *dptr, UNIT *uptr, const char *cptr)
 {
+if (uptr->flags & UNIT_DIS)                             /* disabled? */
+    return SCPE_UDIS;
 if (dptr->attach != NULL)                               /* device routine? */
     return dptr->attach (uptr, (CONST char *)cptr);     /* call it */
 return attach_unit (uptr, (CONST char *)cptr);          /* no, std routine */
@@ -6037,8 +6042,6 @@ t_stat attach_unit (UNIT *uptr, CONST char *cptr)
 {
 DEVICE *dptr;
 
-if (uptr->flags & UNIT_DIS)                             /* disabled? */
-    return SCPE_UDIS;
 if (!(uptr->flags & UNIT_ATTABLE))                      /* not attachable? */
     return SCPE_NOATT;
 if ((dptr = find_dev_from_unit (uptr)) == NULL)
@@ -7668,7 +7671,6 @@ void put_rval (REG *rptr, uint32 idx, t_value val)
 {
 size_t sz;
 t_value mask;
-t_value old_val;
 uint32 *ptr;
 
 #define PUT_RVAL(sz,rp,id,v,m) \
@@ -7676,8 +7678,6 @@ uint32 *ptr;
             (sz)((*(((sz *) rp->loc) + id) & \
             ~((m) << (rp)->offset)) | ((v) << (rp)->offset))
 
-if (rptr->write_callback)
-    old_val = get_rval (rptr, idx);
 if (rptr == sim_PC)
     sim_brk_npc (0);
 sz = SZ_R (rptr);
@@ -7730,9 +7730,6 @@ else PUT_RVAL (t_uint64, rptr, idx, val, mask);
 #else
 else PUT_RVAL (uint32, rptr, idx, val, mask);
 #endif
-if ((rptr->write_callback) && (!(sim_switches & SIM_SW_REST)))
-    rptr->write_callback (old_val, rptr, idx);
-return;
 }
 
 /* Examine address routine
@@ -8383,7 +8380,7 @@ CONST char *tptr;
 
 *status = SCPE_OK;
 val = strtotv ((CONST char *)cptr, &tptr, radix);
-if ((cptr == tptr) || ((max > 0) && (val > max)))
+if ((cptr == tptr) || (val > max))
     *status = SCPE_ARG;
 else {
     while (sim_isspace (*tptr)) tptr++;

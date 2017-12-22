@@ -337,6 +337,7 @@ REG rom_reg[] = {
     };
 
 MTAB rom_mod[] = {
+    { MTAB_XTD|MTAB_VDV, 0, "ADDRESS", NULL,     NULL, &show_mapped_addr, (void *)ROMBASE, "Display base address" },
     { UNIT_NODELAY, UNIT_NODELAY, "fast access", "NODELAY", NULL, NULL, NULL, "Disable calibrated delay - ROM runs like RAM" },
     { UNIT_NODELAY, 0, "1usec calibrated access", "DELAY",  NULL, NULL, NULL, "Enable calibrated ROM delay - ROM runs slowly" },
     { 0 }
@@ -365,8 +366,13 @@ REG nvr_reg[] = {
     { NULL }
     };
 
+MTAB nvr_mod[] = {
+    { MTAB_XTD|MTAB_VDV, 0, "ADDRESS", NULL,     NULL, &show_mapped_addr, (void *)NVRBASE, "Display base address" },
+    { 0 }
+    };
+
 DEVICE nvr_dev = {
-    "NVR", &nvr_unit, nvr_reg, NULL,
+    "NVR", &nvr_unit, nvr_reg, nvr_mod,
     1, 16, NVRAWIDTH, 4, 16, 32,
     &nvr_ex, &nvr_dep, &nvr_reset,
     NULL, &nvr_attach, &nvr_detach,
@@ -479,8 +485,8 @@ REG sysd_reg[] = {
     { HRDATAD (TIR0,   tmr_tir[0],  32, "SSC timer 0 interval register") },
     { HRDATAD (TNIR0,  tmr_tnir[0], 32, "SSC timer 0 next interval register") },
     { HRDATAD (TIVEC0, tmr_tivr[0],  9, "SSC timer 0 interrupt vector register") },
-    { HRDATAD (TIVEC0, tmr_tivr[0],  9, "SSC timer 0 interrupt vector register") },
     { FLDATAD (TINST0, tmr_inst[0],  0, "SSC timer 0 last wait instructions") },
+    { HRDATAD (TCSR1,  tmr_csr[1],  32, "SSC timer 1 control/status register") },
     { HRDATAD (TIR1,   tmr_tir[1],  32, "SSC timer 1 interval register") },
     { HRDATAD (TNIR1,  tmr_tnir[1], 32, "SSC timer 1 next interval register") },
     { HRDATAD (TIVEC1, tmr_tivr[1],  9, "SSC timer 1 interrupt vector register") },
